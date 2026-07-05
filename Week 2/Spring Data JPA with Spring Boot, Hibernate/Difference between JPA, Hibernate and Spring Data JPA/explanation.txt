@@ -1,0 +1,72 @@
+JPA vs Hibernate vs Spring Data JPA — Practical Explanation
+============================================================
+
+This project demonstrates all three layers working together.
+
+1. JPA (Java Persistence API)
+------------------------------
+JPA is a SPECIFICATION (JSR 338). It defines only contracts:
+  - Annotations: @Entity, @Table, @Id, @Column, @GeneratedValue, etc.
+  - Interfaces: EntityManager, EntityManagerFactory, etc.
+  - Query language: JPQL
+
+It provides NO implementation — it's just a set of rules/interfaces.
+
+In this project:
+  - Book.java uses JPA annotations (@Entity, @Id, @Column, etc.)
+  - These annotations come from javax.persistence.* (the JPA API jar)
+
+2. Hibernate
+------------
+Hibernate is an ORM FRAMEWORK that IMPLEMENTS the JPA specification.
+  - It provides the actual runtime engine that:
+    * Connects to the database
+    * Manages database sessions/transactions
+    * Generates SQL from JPA annotations
+    * Handles caching, lazy loading, dirty checking
+  - Hibernate adds its own features beyond JPA (e.g., Hibernate-specific annotations,
+    HQL query language, second-level cache)
+
+In this project:
+  - Hibernate is included automatically via spring-boot-starter-data-jpa
+  - When the app starts, Hibernate reads Book.java's JPA annotations and
+    generates CREATE TABLE books (id BIGINT, title VARCHAR, author VARCHAR)
+  - The SQL you see in the console (spring.jpa.show-sql=true) is generated
+    by Hibernate
+
+3. Spring Data JPA
+------------------
+Spring Data JPA is an ABSTRACTION LAYER on top of Hibernate (or any JPA provider).
+  - It eliminates BOILERPLATE code by auto-generating repository implementations
+  - You define interfaces like BookRepository extends JpaRepository<Book, Long>
+    and Spring Data JPA automatically provides:
+    * CRUD methods: save(), findAll(), findById(), deleteById()
+    * Query methods derived from method names: findByAuthor() -> SELECT * FROM books WHERE author = ?
+    * Pagination, sorting, and more
+
+In this project:
+  - BookRepository is just an interface (no implementation class!)
+  - Spring Data JPA generates the implementation at runtime
+  - BookService uses it via constructor injection
+
+
+LAYER STACK (bottom to top):
+============================
+
+    Spring Data JPA      <- Auto-generates repos, removes boilerplate
+         uses
+    JPA specification    <- Contracts: @Entity, @Id, EntityManager, etc.
+         implemented by
+    Hibernate ORM        <- Actual SQL generation, session management
+         connects to
+    H2 Database (in-memory)
+
+
+HOW THEY WORK TOGETHER IN THIS PROJECT:
+=========================================
+
+1. Book.java (@Entity)  -- JPA spec defines these annotations
+2. Hibernate reads them -- generates the table schema (JPA implementation)
+3. BookRepository (interface) -- Spring Data JPA auto-creates the implementation
+4. BookService uses BookRepository -- never writes SQL or EntityManager code
+5. JpaDemoApplication runs -- Hibernate creates DB, Spring Data JPA does CRUD
